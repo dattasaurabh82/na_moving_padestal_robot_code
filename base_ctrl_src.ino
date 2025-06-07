@@ -292,7 +292,6 @@ void loop() {
 
   if (currentState != previousState) {
 #ifdef DEBUG_STATE_CHANGES
-    Serial.print(millis());
     Serial.print(F(" State Change: "));
     Serial.print(getStateName(previousState));
     Serial.print(F(" -> "));
@@ -353,7 +352,6 @@ void changeState(RobotState newState) {
   currentState = newState;
   stateEntryTime = millis();
 #ifdef DEBUG_STATE_CHANGES
-  Serial.print(millis());
   Serial.print(F(" Transitioning to: "));
   Serial.println(getStateName(currentState));
 #endif
@@ -426,7 +424,6 @@ void readCapSensePad() {
     if (INIT_ROBOT != lastDebouncedCapState) {
       INIT_ROBOT = lastDebouncedCapState;
 #ifdef DEBUG_CAP_SENSE
-      Serial.print(millis());
       Serial.print(F(" Initial Cap Sense State -> INIT_ROBOT: "));
       Serial.println(INIT_ROBOT ? "ON (Active)" : "OFF (Inactive)");
 #endif
@@ -435,7 +432,6 @@ void readCapSensePad() {
       autoCycleEngaged = true;
       currentlyInAutoPausePhase = false;
       currentAutoPhaseStartTime = millis();
-      // nextAutoWakeUpShouldBeSpin = true; // Removed
     }
     firstRun = false;
   }
@@ -482,7 +478,6 @@ void readCapSensePad() {
 #ifdef DEBUG_CAP_SENSE
   static unsigned long lastContinuousDebugPrint = 0;
   if (millis() - lastContinuousDebugPrint > 2000) {
-    Serial.print(millis());  // Added millis to debug print
     Serial.print(F("  [CS Debug] INIT_ROBOT: "));
     Serial.print(INIT_ROBOT ? "ON" : "OFF");
     Serial.print(F(", autoCycle: "));
@@ -515,7 +510,6 @@ void readDistanceSensor() {
   }
   if (medianDistance <= 0 || medianDistance > 150) { medianDistance = 999; }
 #ifdef DEBUG_DISTANCE
-  Serial.print(millis());  // Added millis to debug print
   Serial.print(F(" Median Dist: "));
   Serial.print(medianDistance);
   Serial.println(F(" cm"));
@@ -525,8 +519,7 @@ void readDistanceSensor() {
 void readIMU() {
   imu.getEuler(ypr);
   currentYaw = ypr[0];
-#ifdef DEBUG_IMU
-  Serial.print(millis());  // Added millis to debug print
+#ifdef DEBUG_I
   Serial.print(F(" IMU Yaw: "));
   Serial.print(currentYaw);
   Serial.println(F(" deg"));
@@ -552,7 +545,6 @@ void handleIdle() {
 #ifdef DEBUG_STATE_CHANGES
     static unsigned long lastIdleNotifyTime = 0;
     if (millis() - lastIdleNotifyTime > 2000) {
-      Serial.print(millis());  // Added millis to debug print
       Serial.println(F(" In IDLE, waiting for INIT_ROBOT=true (CapSense)."));
       lastIdleNotifyTime = millis();
     }
@@ -564,7 +556,6 @@ void handleMovingForward() {
   moveForwardCmd(FORWARD_SPEED);
   if (medianDistance < COLLISION_THRESHOLD_DISTANCE) {
 #ifdef DEBUG_OBSTACLE
-    Serial.print(millis());  // Added millis to debug print
     Serial.print(F(" Obstacle @ "));
     Serial.print(medianDistance);
     Serial.println(F(" cm"));
@@ -602,13 +593,11 @@ void handleSelectingTurnAngle() {
   int randomDirection = random(0, 2);
   if (randomDirection == 0) {
 #ifdef DEBUG_TURN
-    Serial.print(millis());  // Added millis to debug print
     Serial.println(F(" Selected LEFT timed turn."));
 #endif
     changeState(TURNING_LEFT);
   } else {
 #ifdef DEBUG_TURN
-    Serial.print(millis());  // Added millis to debug print
     Serial.println(F(" Selected RIGHT timed turn."));
 #endif
     changeState(TURNING_RIGHT);
@@ -620,14 +609,12 @@ void handleTurningLeft() {
 #ifdef DEBUG_TURN
   static unsigned long lastTurnPrint = 0;
   if (millis() - lastTurnPrint > 500) {
-    Serial.print(millis());  // Added millis to debug print
     Serial.println(F(" Executing timed LEFT turn..."));
     lastTurnPrint = millis();
   }
 #endif
   if (millis() - stateEntryTime >= TIMED_OBSTACLE_TURN_DURATION_MS) {
 #ifdef DEBUG_TURN
-    Serial.print(millis());  // Added millis to debug print
     Serial.println(F(" Timed LEFT turn completed."));
 #endif
     stopMotors();
@@ -641,14 +628,12 @@ void handleTurningRight() {
 #ifdef DEBUG_TURN
   static unsigned long lastTurnPrint = 0;
   if (millis() - lastTurnPrint > 500) {
-    Serial.print(millis());  // Added millis to debug print
     Serial.println(F(" Executing timed RIGHT turn..."));
     lastTurnPrint = millis();
   }
 #endif
   if (millis() - stateEntryTime >= TIMED_OBSTACLE_TURN_DURATION_MS) {
 #ifdef DEBUG_TURN
-    Serial.print(millis());  // Added millis to debug print
     Serial.println(F(" Timed RIGHT turn completed."));
 #endif
     stopMotors();
@@ -660,7 +645,6 @@ void handleTurningRight() {
 void handlePostTurnStop() {
   stopMotors();
   if (millis() - stateEntryTime >= POST_TURN_STOP_DURATION) {
-    // forwardReferenceYaw and its debug print removed
     changeState(MOVING_FORWARD);
   }
 }
@@ -675,7 +659,6 @@ void manageAutomaticRoamCycle() {
 
   if (!currentlyInAutoPausePhase) {
     if (INIT_ROBOT && (millis() - currentAutoPhaseStartTime >= ACTIVE_ROAM_DURATION_MS)) {
-      Serial.print(millis());  // Added millis to debug print
       Serial.println(F(" Auto-Cycle: Active roam ended. Initiating auto-pause (silent)."));
       stopMotors();
       INIT_ROBOT = false;
@@ -688,7 +671,6 @@ void manageAutomaticRoamCycle() {
     }
   } else {  // currentlyInAutoPausePhase is true
     if (!INIT_ROBOT && (millis() - currentAutoPhaseStartTime >= AUTO_PAUSE_DURATION_MS)) {
-      Serial.print(millis());  // Added millis to debug print
       Serial.println(F(" Auto-Cycle: Auto-pause ended. Resuming normal roam (silent via IDLE)."));
       INIT_ROBOT = true;
       playStartToneOnNextActivation = false;  // SILENT auto-wake-up
